@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>Joystick</title>
+        <meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=0.5"/>
+        <style>
+        html, body {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+    </head>
+    <body>
+    <div id="content">
+        <div id="debug_data" style="display: none;">
+        x: <span id="pos_x"></span><br/>
+        y: <span id="pos_y"></span><br/>
+        pos: <span id="pos_pos"></span><br/>
+        angle: <span id="pos_angle"></span><br/>
+        motors: <span id="motor_l"></span> : <span id="motor_r"></span><br/>
+        <a href="#" onclick="testRandom();">Test</a>
+        </div>
+            <div id="joystick"></div>
+        <div class="buttons">
+            <a href="#" onclick="btnLight();">Light</a>
+        </div>
+            <div>
+        <span id="ws_message"></span>
+            </div>
+    </div>
+        <script src="nipplejs.min.js" charset="utf-8"></script>
+    <script src="tests.js"></script>
+        <script>
+    //<![CDATA[
+        var motor_speed_min = 120;
+        var motor_speed_max = 255;
+       
+    var urlParams;
+    (window.onpopstate = function () {
+        var match;
+        var pl     = /\+/g;  // Regex for replacing addition symbol with a space
+        var search = /([^&=]+)=?([^&]*)/g;
+        var decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); };
+        var query  = window.location.search.substring(1);
+
+        urlParams = {};
+        while (match = search.exec(query)) {
+            urlParams[decode(match[1])] = decode(match[2]);
+        }
+
+        var debug_data = document.getElementById("debug_data"); 
+        if (urlParams.hasOwnProperty("debug")) {
+            //debug_data.style.visibility = "visible";
+            debug_data.style.display = "block";
+        }
+    })();
+ 
+    function initJoystick() {
+        var joystick = nipplejs.create({
+            zone: document.getElementById('joystick'),
+            mode: 'static',
+            position: { left: '50%', top: '50%' },
+            color: 'green',
+            restOpacity: 1.0,
+            size: window.innerHeight*0.50
+        });
+
+        joystick.on("move", function(evt, data) {
+            var pos_data = getPos(data.position.x, data.position.y);
+            sendData(pos_data);
+            showPos(pos_data);
+            showMotors(pos_data.motor_l, pos_data.motor_r);
+        });
+
+        joystick.on("end", function(evt, data) {
+            var pos_data = getPos(data.position.x, data.position.y);
+            sendData(pos_data);
+            showPos(pos_data);
+            showMotors(pos_data.motor_l, pos_data.motor_r);
+        });
+
+        return joystick;
+    }
+
+    function getPos(nipple_x, nipple_y) {
+        var pos_x = (nipple_x - offset_x) / joy_size;
+        var pos_y = (offset_y - nipple_y) / joy_size;
+        var angle_rad = -Math.atan2(-pos_x, pos_y);
+        var angle_deg = angle_rad / Math.PI * 180;
+        var distance = Math.sqrt(Math.pow(pos_x, 2) + Math.pow(pos_y, 2));
+        var motor_l = 0;
+        var motor_r = 0;
+        var motor_speed = distance;
+        if (angle_deg > 0) {
+            motor_r = motor_speed * Math.cos(Math.abs(angle_rad*2));
+            motor_l = motor_speed;
+        } else {
+            motor_l = motor_speed * Math.cos(Math.abs(angle_rad*2));
+            motor_r = motor_speed;
+        }
+        motor_l = pos_y > 0 ? motor_l : -motor_l;
+        motor_r = pos_y > 0 ? motor_r : -motor_r;
+        return {
+            pos_x: pos_x,
+            pos_y: pos_y,
+            angle_rad: angle_rad,
+            angle_deg: angle_deg,
+            distance: distance,
+            motor_l: motor_l,
+            motor_r: motor_r
+        };
+    }
+
+    function showPos(pos_data) {
+        pos_pos.innerHTML = pos_data.distance;
+        pos_angle.innerHTML = pos_data.angle_deg;
+        pos_x.innerHTML = pos_data.pos_x;
+        pos_y.innerHTML = pos_data.pos_y;
+    }
+
+    function showMotors(motor_l, motor_r) {
+        pos_motor_l.innerHTML = motor_l;
+        pos_motor_r.innerHTML = motor_r;
+    }
+
+    function sendData(pos_data) {
+        var motor_speed_l = pos_data.motor_l * (motor_speed_max - motor_speed_min);
+        var motor_speed_r = pos_data.motor_r * (motor_speed_max - motor_speed_min);
+        motor_speed_l = motor_speed_l > 0 ? (motor_speed_l + motor_speed_min) : motor_speed_l;
+        motor_speed_r = motor_speed_r > 0 ? (motor_speed_r + motor_speed_min) : motor_speed_r;
+        motor_speed_l = motor_speed_l < 0 ? (motor_speed_l - motor_speed_min) : motor_speed_l;
+        motor_speed_r = motor_speed_r < 0 ? (motor_speed_r - motor_speed_min) : motor_speed_r;
+        var msg = "M:" + Math.round(motor_speed_l) + " " + Math.round(motor_speed_r) + "\n";
+        websocket.send(msg);
+    }
+
+    function btnLight() {
+        websocket.send("L:t");
+    }
+
+    var joystick = null;
+    var offset_x = 0;
+    var offset_y = 0;
+    var joy_size = 1;
+
+    var pos_x = document.getElementById("pos_x");
+    var pos_y = document.getElementById("pos_y");
+    var pos_pos = document.getElementById("pos_pos");
+    var pos_angle = document.getElementById("pos_angle");
+    var pos_motor_l = document.getElementById("motor_l");
+    var pos_motor_r = document.getElementById("motor_r");
+    var ws_message = document.getElementById("ws_message");
+
+    var ws_url = "ws://"+window.location.host+"/websocket/wsm.cgi";
+
+    websocket = new WebSocket(ws_url);
+    websocket.onopen = function(evt) {
+        ws_message.innerHTML = "Connected";
+        joystick = initJoystick();
+        offset_x = joystick[0].position.x;
+        offset_y = joystick[0].position.y;
+        joy_size = joystick[0].ui.back.clientHeight / 2;
+
+        var pos_data = getPos(joystick[0].position.x, joystick[0].position.y);
+        showPos(pos_data);
+        showMotors(pos_data.motor_l, pos_data.motor_r);
+    };
+    websocket.onclose = function(evt) {
+        ws_message.innerHTML = "Disconnected";
+    };
+    websocket.onmessage = function(evt) {
+        ws_message.innerHTML = evt.data;
+    };
+    websocket.onerror = function(evt) {
+        console.log(evt.data);
+        ws_message.innerHTML = "Error: " + evt.data;
+    };
+
+    //]]>
+        </script>
+    </body>
+</html>
