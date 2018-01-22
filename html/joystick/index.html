@@ -136,12 +136,16 @@
         motor_speed_r = motor_speed_r > 0 ? (motor_speed_r + motor_speed_min) : motor_speed_r;
         motor_speed_l = motor_speed_l < 0 ? (motor_speed_l - motor_speed_min) : motor_speed_l;
         motor_speed_r = motor_speed_r < 0 ? (motor_speed_r - motor_speed_min) : motor_speed_r;
-        var msg = "M:" + Math.round(motor_speed_l) + " " + Math.round(motor_speed_r) + "\n";
-        websocket.send(msg);
+        var msg = {
+            "M": [Math.round(motor_speed_l), Math.round(motor_speed_r)]
+        };
+        websocket.send(JSON.stringify(msg));
     }
 
     function btnLight() {
-        websocket.send("L:t");
+        websocket.send(JSON.stringify({
+            "L": "t"
+        }));
     }
 
     var joystick = null;

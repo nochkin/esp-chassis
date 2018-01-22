@@ -6,9 +6,14 @@
 
 #include <esp8266.h>
 
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "esp_motors.h"
 
 // https://github.com/StefanBruens/ESP8266_new_pwm
+
+static int16_t esp_motors_status[] = {0, 0};
 
 static uint32_t pwm_pins[2][3] = {
     {0, 0, ESP_MOTOR_A_SPEED},
@@ -30,11 +35,13 @@ void esp_motors_set(int16_t motor_a, int16_t motor_b) {
     pwm_start();
 }
 
-void esp_motors_init() {
+static void esp_motors_task(void *pvParameters) {
+    /*
     printf("Motor A (Speed) GPIO: %u\n", ESP_MOTOR_A_SPEED);
     printf("Motor A (Dir) GPIO: %u\n", ESP_MOTOR_A_DIR);
     printf("Motor B (Speed) GPIO: %u\n", ESP_MOTOR_B_SPEED);
     printf("Motor B (Dir) GPIO: %u\n", ESP_MOTOR_B_DIR);
+    */
 
     gpio_enable(ESP_MOTOR_A_DIR, GPIO_OUTPUT);
     gpio_enable(ESP_MOTOR_B_DIR, GPIO_OUTPUT);
@@ -44,4 +51,18 @@ void esp_motors_init() {
     esp_motors_set(0, 0);
 
     printf("Motors inited\n");
+
+    while (1) {
+        esp_motors_set(esp_motors_status[0], esp_motors_status[1]);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+    };
+}
+
+void esp_motors_save(int16_t motor_a, int16_t motor_b) {
+    esp_motors_status[0] = motor_a;
+    esp_motors_status[1] = motor_b;
+}
+
+void esp_motors_init() {
+    xTaskCreate(&esp_motors_task, "esp_motors", 256, NULL, 10, NULL);
 }

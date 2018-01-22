@@ -46,7 +46,7 @@ PROGRAM_CFLAGS += -std=gnu99
 #EXTRA_CFLAGS += -DCONFIG_POS=$(CONFIG_POS) -DFREERTOS -mlongcalls #
 EXTRA_CFLAGS += -DMEMP_NUM_NETCONN=$(LIBESPHTTPD_MAX_CONNECTIONS)
 
-EXTRA_COMPONENTS = extras/rboot-ota extras/dhcpserver extras/libesphttpd
+EXTRA_COMPONENTS = extras/rboot-ota extras/dhcpserver extras/libesphttpd extras/jsmn
 EXTRA_COMPONENTS += extras/new_pwm
 
 include $(ESP_RTOS_BASE)/common.mk
