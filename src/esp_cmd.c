@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <c_types.h>
-//#include <mem.h>
 #include <string.h>
-//#include <osapi.h>
+
+#include <FreeRTOS.h>
+#include <task.h>
 
 #include "esp_motors.h"
-// #include "user_gpio1.h"
 
 #include "esp_cmd.h"
 
@@ -46,4 +46,6 @@ void esp_cmd_parse(char *cmd, int len) {
         default:
             break;
     }
+
+    //vTaskDelay(1);
 }

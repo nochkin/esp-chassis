@@ -5,10 +5,10 @@
 
 #define ESP_MOTORS_PERIOD 5120
 
-#define ESP_MOTOR_A_SPEED    12
-#define ESP_MOTOR_A_DIR      14
-#define ESP_MOTOR_B_SPEED    13
-#define ESP_MOTOR_B_DIR      3
+#define ESP_MOTOR_A_SPEED    5
+#define ESP_MOTOR_A_DIR      0
+#define ESP_MOTOR_B_SPEED    4
+#define ESP_MOTOR_B_DIR      2
 
 typedef struct {
     uint8_t func;

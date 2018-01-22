@@ -37,8 +37,8 @@ some pictures of cats.
 
 #include "esp_cmd.h"
 
-#define AP_SSID "esp-open-rtos AP"
-#define AP_PSK "esp-open-rtos"
+#define AP_SSID "esp-chassis"
+#define AP_PSK "esp123456"
 
 static ETSTimer websockTimer;
 
@@ -103,7 +103,7 @@ void wifiInit() {
     switch(sdk_wifi_get_opmode()) {
         case STATIONAP_MODE:
         case SOFTAP_MODE:
-            IP4_ADDR(&ap_ip.ip, 172, 16, 0, 1);
+            IP4_ADDR(&ap_ip.ip, 192, 168, 4, 1);
             IP4_ADDR(&ap_ip.gw, 0, 0, 0, 0);
             IP4_ADDR(&ap_ip.netmask, 255, 255, 0, 0);
             sdk_wifi_set_ip_info(1, &ap_ip);
@@ -121,7 +121,7 @@ void wifiInit() {
             sdk_wifi_softap_set_config(&ap_config);
 
             ip_addr_t first_client_ip;
-            IP4_ADDR(&first_client_ip, 172, 16, 0, 2);
+            IP4_ADDR(&first_client_ip, 192, 168, 4, 11);
             dhcpserver_start(&first_client_ip, 4);
             dhcpserver_set_dns(&ap_ip.ip);
             dhcpserver_set_router(&ap_ip.ip);
@@ -136,7 +136,7 @@ void wifiInit() {
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 void web_init(void) {
     wifiInit();
-	captdnsInit();
+	//captdnsInit();
 
 	espFsInit((void*)(_binary_build_web_espfs_bin_start));
 	httpdInit(builtInUrls, 80);
