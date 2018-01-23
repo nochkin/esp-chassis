@@ -59,7 +59,7 @@ void esp_cmd_parse(char *cmd, int len) {
             }
             if (ik == 2) {
                 printf("Motor: L:%d R:%d\n", params[0], params[1]);
-                esp_motors_set(params[0], params[1]);
+                esp_motors_save(params[0], params[1]);
             }
             ii += jsmn_tokens[ii+1].size + 1;
         }
