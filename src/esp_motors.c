@@ -2,7 +2,14 @@
 #include <stdlib.h>
 //#include <osapi.h>
 //#include <c_types.h>
+
+#define PWM2 1
+
+#ifdef PWM2
 #include <pwm.h>
+#else
+#include <new_pwm.h>
+#endif
 
 #include <esp8266.h>
 
@@ -15,19 +22,32 @@
 static int16_t esp_motors_status[] = {0, 0};
 static uint32_t *esp_motors_status_p = (uint32_t*)esp_motors_status;
 
+#ifdef PWM2
 static uint8_t pwm_pins[] = {
     ESP_MOTOR_A_SPEED,
     ESP_MOTOR_B_SPEED
 };
+#else
+static uint32_t pwm_pins[2][3] = {
+    {0, 0, ESP_MOTOR_A_SPEED},
+    {0, 0, ESP_MOTOR_B_SPEED}
+};
+uint32_t pwm_duty_init[2] = {0};
+#endif
 
 //static SemaphoreHandle_t xMutex;
 static TaskHandle_t xTaskToNotify = NULL;
 
 void esp_motors_set_single(uint8_t motor_id, uint8_t motor_speed_pin, int16_t motor_speed, uint8_t motor_dir_pin) {
-    uint32_t motor_speed_new = motor_speed * (ESP_MOTORS_PERIOD / 256);
+#ifdef PWM2
+    uint32_t motor_speed_new = motor_speed * (PWM_MAX_PERIOD/ 256);
     pwm_set_duty(motor_id, abs(motor_speed_new));
+#else
+    uint32_t motor_speed_new = motor_speed * (ESP_MOTORS_PERIOD / 256);
+    pwm_set_duty(abs(motor_speed_new), motor_id);
+#endif
 
-    gpio_write(motor_dir_pin, motor_speed < 0 ? 1 : 0);
+    gpio_write(motor_dir_pin, motor_speed > 0 ? 1 : 0);
 }
 
 void esp_motors_set(int16_t motor_a, int16_t motor_b) {
@@ -43,7 +63,11 @@ static void esp_motors_task(void *pvParameters) {
     printf("Motor B (Dir) GPIO: %u\n", ESP_MOTOR_B_DIR);
     */
 
+#ifdef PWM2
     pwm_init(3, pwm_pins, false);
+#else
+    pwm_init(ESP_MOTORS_PERIOD, pwm_duty_init, 2, pwm_pins);
+#endif
 
     esp_motors_set(0, 0);
     pwm_start();
@@ -84,6 +108,8 @@ void esp_motors_save(int16_t motor_a, int16_t motor_b) {
 
 void esp_motors_init() {
     //xMutex = xSemaphoreCreateMutex();
+    gpio_enable(ESP_MOTOR_A_DIR, GPIO_OUTPUT);
+    gpio_enable(ESP_MOTOR_B_DIR, GPIO_OUTPUT);
     xTaskCreate(&esp_motors_task, "esp_motors", 256, NULL, 1, &xTaskToNotify);
 }
 
