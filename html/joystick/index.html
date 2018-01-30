@@ -38,7 +38,7 @@
     <script src="tests.js"></script>
         <script>
     //<![CDATA[
-        var motor_speed_min = 50;
+        var motor_speed_min = 30;
         var motor_speed_max = 255;
        
     var urlParams;
@@ -139,6 +139,7 @@
         var msg = {
             "M": [Math.round(motor_speed_l), Math.round(motor_speed_r)]
         };
+        console.log(msg['M']);
         websocket.send(JSON.stringify(msg));
     }
 

@@ -39,20 +39,30 @@ uint32_t pwm_duty_init[2] = {0};
 static TaskHandle_t xTaskToNotify = NULL;
 
 void esp_motors_set_single(uint8_t motor_id, uint8_t motor_speed_pin, int16_t motor_speed, uint8_t motor_dir_pin) {
+    //motor_speed = motor_speed < 0 ? -(256 + motor_speed) : motor_speed;
 #ifdef PWM2
-    uint32_t motor_speed_new = motor_speed * (PWM_MAX_PERIOD/ 256);
-    pwm_set_duty(motor_id, abs(motor_speed_new));
+    uint32_t motor_speed_new = abs(motor_speed) * (PWM_MAX_PERIOD/ 256);
+    pwm_set_duty(motor_id, motor_speed_new);
 #else
-    uint32_t motor_speed_new = motor_speed * (ESP_MOTORS_PERIOD / 256);
-    pwm_set_duty(abs(motor_speed_new), motor_id);
+    uint32_t motor_speed_new = abs(motor_speed) * (ESP_MOTORS_PERIOD / 256);
+    pwm_set_duty(motor_speed_new, motor_id);
 #endif
 
-    gpio_write(motor_dir_pin, motor_speed > 0 ? 1 : 0);
+    gpio_write(motor_dir_pin, motor_speed < 0 ? 1 : 0);
 }
 
 void esp_motors_set(int16_t motor_a, int16_t motor_b) {
+#ifdef PWM2
+    pwm_stop();
+#else
+#endif
     esp_motors_set_single(0, ESP_MOTOR_A_SPEED, motor_a, ESP_MOTOR_A_DIR);
     esp_motors_set_single(1, ESP_MOTOR_B_SPEED, motor_b, ESP_MOTOR_B_DIR);
+#ifdef PWM2
+    pwm_start();
+#else
+    pwm_start();
+#endif
 }
 
 static void esp_motors_task(void *pvParameters) {
@@ -65,6 +75,7 @@ static void esp_motors_task(void *pvParameters) {
 
 #ifdef PWM2
     pwm_init(3, pwm_pins, false);
+    pwm_set_freq(2000);
 #else
     pwm_init(ESP_MOTORS_PERIOD, pwm_duty_init, 2, pwm_pins);
 #endif
