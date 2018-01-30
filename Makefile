@@ -48,7 +48,6 @@ EXTRA_CFLAGS += -DMEMP_NUM_NETCONN=$(LIBESPHTTPD_MAX_CONNECTIONS)
 
 EXTRA_COMPONENTS = extras/rboot-ota extras/dhcpserver extras/libesphttpd extras/jsmn
 EXTRA_COMPONENTS += extras/pwm2
-EXTRA_COMPONENTS += extras/new_pwm
 
 include $(ESP_RTOS_BASE)/common.mk
 
